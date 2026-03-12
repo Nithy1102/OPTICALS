@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rajesh Opticals — Login</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+body{
+  height:100vh; display:flex; justify-content:center; align-items:center;
+  background: linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)), url("assets/background.jpg");
+  background-size:cover; background-position:center;
+}
+.login-container{
+  width:420px; padding:45px; border-radius:20px;
+  background:rgba(255,255,255,0.15); backdrop-filter:blur(12px);
+  box-shadow:0 10px 40px rgba(0,0,0,0.6); text-align:center;
+}
+.login-container img{ width:90px; margin-bottom:16px; }
+.login-container h1{
+  color:white; margin-bottom:28px; letter-spacing:4px;
+  font-weight:700; font-size:20px; text-shadow:0 3px 10px rgba(0,0,0,0.7);
+}
+.input-box{ margin-bottom:16px; }
+input, select{
+  width:100%; padding:14px; border:none; border-radius:10px;
+  font-size:15px; background:#f1f1f1; display:block; color:#333;
+}
+.login-btn{
+  width:100%; padding:14px; border:none; border-radius:10px;
+  font-size:16px; font-weight:bold; color:white;
+  background:linear-gradient(90deg,#274b9f,#3f7ae0);
+  cursor:pointer; transition:0.3s; margin-top:6px;
+}
+.login-btn:hover{ transform:scale(1.03); }
+.login-btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+.error-msg{ color:#ff6b6b; font-size:13px; margin-top:12px; min-height:18px; }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <img src="assets/logo.png" alt="Logo" onerror="this.style.display='none'">
+  <h1>RAJESH OPTICALS</h1>
+
+  <div class="input-box">
+    <input type="email" id="email" placeholder="Email Address">
+  </div>
+  <div class="input-box">
+    <input type="password" id="password" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+  </div>
+
+  <button class="login-btn" id="loginBtn" onclick="login()">LOGIN</button>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script>
+  // Already logged in → skip to dashboard
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session) window.location.href = "dashboard.html";
+  });
+
+  async function login() {
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const btn      = document.getElementById("loginBtn");
+    const errMsg   = document.getElementById("errorMsg");
+
+    errMsg.textContent = "";
+    if (!email || !password) { errMsg.textContent = "Please fill in all fields."; return; }
+
+    btn.disabled = true;
+    btn.textContent = "Logging in...";
+
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+      if (error) { errMsg.textContent = error.message; return; }
+
+      // Log activity
+      const { data: profile } = await sb
+        .from("profiles").select("*").eq("id", data.user.id).single();
+
+      await sb.from("activity_log").insert({
+        user_id:   data.user.id,
+        user_name: profile?.name || email,
+        user_role: profile?.role || "staff",
+        status:    `${profile?.name || email} Logged In`,
+        action:    "Login"
+      });
+
+      window.location.href = "dashboard.html";
+    } catch (e) {
+      errMsg.textContent = "Server error. Please try again.";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "LOGIN";
+    }
+  }
+</script>
+</body>
+</html>

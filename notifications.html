@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notifications — Rajesh Opticals</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root{ --glass:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.15); --cyan:#00e0ff; --text:#e0e0e0; }
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Roboto Mono',monospace; background:radial-gradient(circle at top right,#216c8d,#0d1b2a); color:var(--text); display:flex; min-height:100vh; }
+.sidebar{ width:260px; background:var(--glass); backdrop-filter:blur(20px); border-right:1px solid var(--border); padding:30px 0; display:flex; flex-direction:column; align-items:center; position:fixed; height:100vh; }
+.logo{ font-size:20px; color:var(--cyan); font-weight:600; margin-bottom:8px; }
+.logo-img{ width:55px; margin-bottom:10px; }
+.sidebar ul{ list-style:none; padding:0; width:100%; margin-top:20px; }
+.sidebar ul li{ padding:14px 25px; cursor:pointer; display:flex; gap:15px; align-items:center; color:#aaa; transition:.3s; }
+.sidebar ul li:hover,.sidebar ul li.active{ background:var(--glass); color:var(--cyan); border-left:3px solid var(--cyan); }
+.sidebar i{ width:22px; text-align:center; }
+.main{ flex:1; padding:40px; margin-left:260px; }
+.main h1{ color:var(--cyan); margin-bottom:28px; font-size:24px; }
+.card{ background:var(--glass); backdrop-filter:blur(15px); border:1px solid var(--border); border-radius:15px; padding:22px 25px; margin-bottom:14px; transition:.3s; display:flex; align-items:center; gap:20px; }
+.card:hover{ transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,224,255,0.15); }
+.notif-icon{ font-size:22px; color:var(--cyan); width:40px; text-align:center; flex-shrink:0; }
+.notif-text{ flex:1; }
+.notif-text h3{ margin:0 0 4px; font-size:15px; color:white; }
+.notif-text p{ margin:0; font-size:13px; color:#ccc; }
+.time{ font-size:12px; color:#aaa; white-space:nowrap; }
+.loading{ text-align:center; padding:40px; color:#aaa; }
+.empty{ text-align:center; padding:70px; color:#aaa; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <img src="assets/logo.png" class="logo-img" onerror="this.style.display='none'">
+  <div class="logo">Rajesh Opticals</div>
+  <ul>
+    <li onclick="location.href='dashboard.html'"><i class="fas fa-home"></i> Dashboard</li>
+    <li onclick="location.href='patient-records.html'"><i class="fas fa-user-injured"></i> Patient Records</li>
+    <li onclick="location.href='activity-log.html'"><i class="fas fa-history"></i> Activity Log</li>
+    <li onclick="location.href='admin.html'"><i class="fas fa-user-shield"></i> Admin</li>
+    <li class="active"><i class="fas fa-bell"></i> Notifications</li>
+    <li onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</li>
+  </ul>
+</div>
+
+<div class="main">
+  <h1>Notifications</h1>
+  <div id="notifList"><div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script>
+const iconMap = {
+  "user-plus":    "fas fa-user-plus",
+  "user-edit":    "fas fa-user-edit",
+  "sign-in-alt":  "fas fa-sign-in-alt",
+  "sign-out-alt": "fas fa-sign-out-alt",
+  "trash":        "fas fa-trash",
+  "bell":         "fas fa-bell"
+};
+
+function timeAgo(dateStr) {
+  const diff = (Date.now() - new Date(dateStr)) / 1000;
+  if (diff < 60)    return `${Math.floor(diff)}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff/60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)} hr ago`;
+  return `${Math.floor(diff/86400)} days ago`;
+}
+
+(async () => {
+  await requireAuth();
+
+  const { data, error } = await sb
+    .from("notifications").select("*").order("created_at", { ascending: false }).limit(30);
+
+  const container = document.getElementById("notifList");
+
+  if (error || !data?.length) {
+    container.innerHTML = `
+      <div class="empty">
+        <i class="fas fa-bell-slash" style="font-size:44px;margin-bottom:14px;display:block;color:#555;"></i>
+        No notifications yet.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = data.map(n => `
+    <div class="card">
+      <i class="${iconMap[n.icon] || 'fas fa-bell'} notif-icon"></i>
+      <div class="notif-text">
+        <h3>${n.title}</h3>
+        <p>${n.message}</p>
+      </div>
+      <div class="time">${timeAgo(n.created_at)}</div>
+    </div>
+  `).join("");
+})();
+</script>
+</body>
+</html>

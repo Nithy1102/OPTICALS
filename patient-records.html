@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Records — Rajesh Opticals</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root{ --glass:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.15); --cyan:#ffffff; --text:#e0e0e0; }
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Roboto Mono',monospace; background:radial-gradient(circle at top right,#216c8d,#0d1b2a); color:var(--text); display:flex; min-height:100vh; }
+.sidebar{ width:260px; background:var(--glass); backdrop-filter:blur(20px); border-right:1px solid var(--border); padding:30px 0; display:flex; flex-direction:column; align-items:center; position:fixed; height:100vh; }
+.logo{ font-size:20px; color:var(--cyan); font-weight:600; margin-bottom:8px; }
+.logo-img{ width:55px; margin-bottom:10px; }
+.sidebar ul{ list-style:none; padding:0; width:100%; margin-top:20px; }
+.sidebar ul li{ padding:14px 25px; cursor:pointer; display:flex; gap:15px; align-items:center; color:#fffcfc; transition:.3s; }
+.sidebar ul li:hover,.sidebar ul li.active{ background:var(--glass); color:var(--cyan); border-left:3px solid var(--cyan); }
+.sidebar i{ width:22px; text-align:center; }
+.main{ flex:1; padding:40px; margin-left:260px; }
+.main h1{ color:var(--cyan); margin-bottom:28px; font-size:24px; }
+.search-bar{ display:flex; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+.search-bar input,.search-bar select{ padding:11px 14px; border-radius:8px; border:1px solid var(--border); background:var(--glass); color:white; outline:none; font-family:inherit; }
+.search-bar input::placeholder{ color:#aaa; }
+.search-bar button{ padding:11px 20px; background:#00e0ff; border:none; border-radius:8px; cursor:pointer; font-weight:bold; color:#0d1b2a; font-family:inherit; }
+.top-bar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.add-btn{ padding:10px 20px; background:#2ecc71; border:none; border-radius:8px; color:white; cursor:pointer; font-weight:bold; font-family:inherit; }
+.table-box{ background:var(--glass); backdrop-filter:blur(15px); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+table{ width:100%; border-collapse:collapse; }
+th{ background:rgba(255,255,255,0.12); padding:14px 16px; text-align:left; font-size:12px; color:#00e0ff; }
+td{ padding:14px 16px; border-top:1px solid var(--border); font-size:13px; }
+tr:hover td{ background:rgba(255,255,255,0.04); }
+.btn{ padding:5px 11px; border-radius:6px; border:none; cursor:pointer; font-size:11px; font-weight:bold; }
+.view{ background:#2ecc71; color:white; }
+.edit{ background:#f39c12; color:white; }
+.delete{ background:#e74c3c; color:white; }
+.loading{ text-align:center; padding:40px; color:#aaa; }
+
+/* MODAL */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:100; justify-content:center; align-items:center; }
+.modal-overlay.show{ display:flex; }
+.modal{ background:#0d2035; border:1px solid var(--border); border-radius:16px; padding:32px; width:520px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+.modal h2{ color:#00e0ff; margin-bottom:22px; font-size:18px; }
+.modal-grid{ display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+.modal-grid input,.modal-grid select{ padding:11px 14px; border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,0.07); color:white; font-family:inherit; outline:none; }
+.modal-grid input::placeholder{ color:#888; }
+.full{ grid-column:1/-1; }
+.modal-actions{ display:flex; gap:12px; margin-top:20px; justify-content:flex-end; }
+.modal-actions button{ padding:10px 22px; border-radius:8px; border:none; cursor:pointer; font-weight:bold; font-family:inherit; }
+.btn-save{ background:#00e0ff; color:#0d1b2a; }
+.btn-cancel{ background:rgba(255,255,255,0.1); color:white; }
+.error-msg{ color:#ff6b6b; font-size:12px; margin-top:8px; }
+
+/* VIEW MODAL */
+.view-modal{ background:#0d2035; border:1px solid var(--border); border-radius:16px; padding:32px; width:420px; max-width:95vw; }
+.view-modal h2{ color:#00e0ff; margin-bottom:20px; }
+.view-row{ display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.view-row:last-child{ border-bottom:none; }
+.view-label{ color:#aaa; }
+.view-val{ color:white; font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <img src="assets/logo.png" class="logo-img" onerror="this.style.display='none'">
+  <div class="logo">Rajesh Opticals</div>
+  <ul>
+    <li onclick="location.href='dashboard.html'"><i class="fas fa-home"></i> Dashboard</li>
+    <li class="active"><i class="fas fa-user-injured"></i> Patient Records</li>
+    <li onclick="location.href='activity-log.html'"><i class="fas fa-history"></i> Activity Log</li>
+    <li onclick="location.href='admin.html'"><i class="fas fa-user-shield"></i> Admin</li>
+    <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+    <li onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Logout</li>
+  </ul>
+</div>
+
+<div class="main">
+  <h1>Patient Records</h1>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search name or phone">
+    <select id="branchFilter">
+      <option value="">All Branches</option>
+      <option>Tirupattur</option>
+      <option>Vaniyambadi</option>
+      <option>Ambur</option>
+    </select>
+    <button onclick="loadPatients()"><i class="fas fa-search"></i> Search</button>
+  </div>
+  <div class="top-bar">
+    <span id="countLabel" style="color:#aaa;font-size:13px;"></span>
+    <button class="add-btn" onclick="openAddModal()"><i class="fas fa-plus"></i> Add Patient</button>
+  </div>
+  <div class="table-box">
+    <table>
+      <thead><tr><th>Name</th><th>Phone</th><th>Branch</th><th>Remaining (₹)</th><th>Actions</th></tr></thead>
+      <tbody id="patientBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add Patient</h2>
+    <div class="modal-grid">
+      <input type="hidden" id="patientId">
+      <input type="text"   id="pName"      placeholder="Full Name"         class="full">
+      <input type="text"   id="pPhone"     placeholder="Phone Number">
+      <select id="pBranch">
+        <option value="">Select Branch</option>
+        <option>Tirupattur</option><option>Vaniyambadi</option><option>Ambur</option>
+      </select>
+      <input type="number" id="pRemaining" placeholder="Remaining Amount (₹)" class="full">
+      <input type="text"   id="pSph"       placeholder="SPH (e.g. -1.50)">
+      <input type="text"   id="pCyl"       placeholder="CYL (e.g. -0.50)">
+      <input type="text"   id="pAxis"      placeholder="AXIS (e.g. 90)" class="full">
+    </div>
+    <div class="error-msg" id="modalError"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modalOverlay')">Cancel</button>
+      <button class="btn-save"   onclick="savePatient()">Save Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewOverlay">
+  <div class="view-modal">
+    <h2>Patient Details</h2>
+    <div id="viewContent"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('viewOverlay')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script>
+let currentUser = null;
+
+(async () => {
+  await requireAuth();
+  currentUser = await getCurrentUser();
+  loadPatients();
+})();
+
+async function loadPatients() {
+  document.getElementById("patientBody").innerHTML = `<tr><td colspan="5" class="loading">Loading...</td></tr>`;
+  const search = document.getElementById("searchInput").value.trim();
+  const branch = document.getElementById("branchFilter").value;
+
+  let query = sb.from("patients").select("*").order("created_at", { ascending: false });
+
+  if (search) query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+  if (branch) query = query.eq("branch", branch);
+
+  const { data, error } = await query;
+  const tbody = document.getElementById("patientBody");
+
+  document.getElementById("countLabel").textContent = `${data?.length || 0} patient(s) found`;
+
+  if (error || !data?.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="loading">No patients found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.phone}</td>
+      <td>${p.branch}</td>
+      <td>₹${p.remaining}</td>
+      <td>
+        <button class="btn view"   onclick='viewPatient(${JSON.stringify(p)})'>View</button>
+        <button class="btn edit"   onclick='openEditModal(${JSON.stringify(p)})'>Edit</button>
+        <button class="btn delete" onclick="deletePatient('${p.id}','${p.name}')">Delete</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function openAddModal() {
+  document.getElementById("modalTitle").textContent = "Add Patient";
+  document.getElementById("patientId").value = "";
+  ["pName","pPhone","pRemaining","pSph","pCyl","pAxis"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("pBranch").value = "";
+  document.getElementById("modalError").textContent = "";
+  document.getElementById("modalOverlay").classList.add("show");
+}
+
+function openEditModal(p) {
+  document.getElementById("modalTitle").textContent = "Edit Patient";
+  document.getElementById("patientId").value    = p.id;
+  document.getElementById("pName").value        = p.name;
+  document.getElementById("pPhone").value       = p.phone;
+  document.getElementById("pBranch").value      = p.branch;
+  document.getElementById("pRemaining").value   = p.remaining;
+  document.getElementById("pSph").value         = p.prescription?.sph  || "";
+  document.getElementById("pCyl").value         = p.prescription?.cyl  || "";
+  document.getElementById("pAxis").value        = p.prescription?.axis || "";
+  document.getElementById("modalError").textContent = "";
+  document.getElementById("modalOverlay").classList.add("show");
+}
+
+function viewPatient(p) {
+  document.getElementById("viewContent").innerHTML = `
+    <div class="view-row"><span class="view-label">Name</span>      <span class="view-val">${p.name}</span></div>
+    <div class="view-row"><span class="view-label">Phone</span>     <span class="view-val">${p.phone}</span></div>
+    <div class="view-row"><span class="view-label">Branch</span>    <span class="view-val">${p.branch}</span></div>
+    <div class="view-row"><span class="view-label">Remaining</span> <span class="view-val">₹${p.remaining}</span></div>
+    <div class="view-row"><span class="view-label">SPH</span>       <span class="view-val">${p.prescription?.sph  || '—'}</span></div>
+    <div class="view-row"><span class="view-label">CYL</span>       <span class="view-val">${p.prescription?.cyl  || '—'}</span></div>
+    <div class="view-row"><span class="view-label">AXIS</span>      <span class="view-val">${p.prescription?.axis || '—'}</span></div>
+    <div class="view-row"><span class="view-label">Added</span>     <span class="view-val">${new Date(p.created_at).toLocaleDateString("en-IN")}</span></div>
+  `;
+  document.getElementById("viewOverlay").classList.add("show");
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+
+async function savePatient() {
+  const id      = document.getElementById("patientId").value;
+  const name    = document.getElementById("pName").value.trim();
+  const phone   = document.getElementById("pPhone").value.trim();
+  const branch  = document.getElementById("pBranch").value;
+  const errEl   = document.getElementById("modalError");
+
+  if (!name || !phone || !branch) { errEl.textContent = "Name, phone and branch are required."; return; }
+
+  const payload = {
+    name: name.toUpperCase(), phone, branch,
+    remaining: parseFloat(document.getElementById("pRemaining").value) || 0,
+    prescription: {
+      sph:  document.getElementById("pSph").value,
+      cyl:  document.getElementById("pCyl").value,
+      axis: document.getElementById("pAxis").value
+    }
+  };
+
+  let error;
+  if (id) {
+    ({ error } = await sb.from("patients").update(payload).eq("id", id));
+    if (!error) await logActivity(currentUser, "Patient Record Updated", "Edit");
+  } else {
+    ({ error } = await sb.from("patients").insert(payload));
+    if (!error) {
+      await logActivity(currentUser, "New Patient Added", "Create");
+      await addNotification("New Patient Added", `${payload.name} was added by ${currentUser?.name}.`, "user-plus");
+    }
+  }
+
+  if (error) { errEl.textContent = error.message; return; }
+  closeModal("modalOverlay");
+  loadPatients();
+}
+
+async function deletePatient(id, name) {
+  if (!confirm(`Delete patient "${name}"? This cannot be undone.`)) return;
+  const { error } = await sb.from("patients").delete().eq("id", id);
+  if (!error) {
+    await logActivity(currentUser, `Patient ${name} Deleted`, "Delete");
+    loadPatients();
+  } else {
+    alert(error.message);
+  }
+}
+</script>
+</body>
+</html>
